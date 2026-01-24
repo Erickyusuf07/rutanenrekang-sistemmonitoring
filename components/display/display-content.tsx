@@ -346,7 +346,8 @@ export default function DisplayContent({ initialData }: { initialData: DisplayDa
       dataList: T[],
       renderContent: (item: T) => React.ReactNode
     ) => {
-      const scrollData = [...dataList, ...dataList];
+      const isBanyak = dataList.length > 3;
+      const scrollData = isBanyak ? [...dataList, ...dataList] : dataList;
 
       return (
         // ✅ 1. Tambahkan "flex-1" agar baris ini melar penuh ke bawah, hilangkan h-24
@@ -369,7 +370,7 @@ export default function DisplayContent({ initialData }: { initialData: DisplayDa
             {dataList.length === 0 ? (
               <span className="text-white/40 italic font-medium text-2xl px-4">Tidak ada jadwal aktif...</span>
             ) : (
-              <div className="animate-marquee whitespace-nowrap flex items-center gap-10 w-max h-full px-4">
+              <div className={`${isBanyak ? "animate-marquee" : ""} whitespace-nowrap flex items-center gap-10 w-max h-full px-4`}>
                 {scrollData.map((item, idx) => (
                   <div key={`${item.id}-${idx}`} className="flex items-center shrink-0">
                     {renderContent(item)}
