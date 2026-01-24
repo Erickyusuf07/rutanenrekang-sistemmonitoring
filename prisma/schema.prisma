@@ -1,0 +1,293 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --------------------------------------
+// 1. MANAJEMEN AKSES (ADMIN)
+// --------------------------------------
+model Admin {
+  id          String      @id @default(uuid()) // ID unik acak (UUID)
+  username    String      @unique
+  email             String      @unique
+  password    String      // Akan di-hash (dienkripsi), tidak boleh plain text
+  namaLengkap String
+  role        Role        @default(ADMIN)
+
+  resetToken        String?     @unique // Token reset password
+  resetTokenExpiry  DateTime?   // Expire setelah 1 jam
+  resetTokenEmail   String?
+  
+  failedLoginAttempts Int       @default(0) // Hitung gagal login
+  lockedUntil        DateTime?  // Lockout sampai waktu tertentu
+  lastLoginAt        DateTime?  // Track login terakhir
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  logs        SystemLog[] // Relasi: Satu admin bisa punya banyak history log
+
+  @@map("admins") // Nama tabel di database asli
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+}
+
+// --------------------------------------
+// 2. DATA PEGAWAI (Gaji & Pangkat)
+// --------------------------------------
+model Pegawai {
+  id               String   @id @default(uuid())
+  nip              String   @unique // Nomor Induk Pegawai (Harus Unik)
+  nama             String
+  jabatan          String
+  // --- DATA BARU (YANG DITAMBAHKAN) ---
+  jenisKelamin     JenisKelamin  @default(LAKI_LAKI) // Penting untuk Grafik Gender
+  tempatLahir      String?
+  tanggalLahir     DateTime?     // Penting untuk Grafik Usia
+  
+  noTelepon        String?
+  alamat           String?       // Bisa panjang, tapi String cukup
+  pendidikanTerakhir String?     // Contoh: S1 Hukum
+  tanggalMasuk     DateTime?     // Untuk hitung masa kerja
+  // ------------------------------------
+  golonganId       String
+  golongan        Golongan @relation(fields: [golonganId], references: [id], onDelete: Restrict)
+  
+  // LOGIKA KENAIKAN PANGKAT (Biasanya 4 tahun sekali)
+  tmtPangkatTerakhir  DateTime // Terhitung Mulai Tanggal
+  jadwalNaikPangkat   DateTime // LOGIC: Diisi otomatis (TMT + 4 tahun) atau manual
+  
+  // LOGIKA KENAIKAN GAJI BERKALA (Biasanya 2 tahun sekali)
+  tmtGajiTerakhir     DateTime
+  jadwalKenaikanGaji  DateTime // LOGIC: Diisi otomatis (TMT + 2 tahun) atau manual
+  
+  status          StatusAktif @default(AKTIF)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([jadwalNaikPangkat]) // Optimasi pencarian jatuh tempo
+  @@index([jadwalKenaikanGaji]) // Optimasi pencarian jatuh tempo
+  @@index([golonganId])
+  @@map("pegawai")
+}
+model Konfigurasi {
+  id                    String   @id @default("global-config")
+  tahunKenaikanPangkat  Int      @default(4) // Default 4 tahun
+  tahunKenaikanGaji     Int      @default(2) // Default 2 tahun
+  updatedAt             DateTime @updatedAt
+}
+enum JenisKelamin {
+  LAKI_LAKI
+  PEREMPUAN
+}
+enum StatusAktif {
+  AKTIF
+  PENSIUN
+  PINDAH
+}
+
+// --------------------------------------
+// 2.1 HISTORY / LOG AKTIVITAS (Security)
+// --------------------------------------
+model Golongan {
+  id        String   @id @default(uuid())
+  nama      String   // Contoh: "Pengatur Muda"
+  kode      String   @unique // Contoh: "II/a"
+  pegawai   Pegawai[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("golongan")
+}
+
+// --------------------------------------
+// 3. WARGA BINAAN (Mapenaling & Bebas)
+// --------------------------------------
+model WargaBinaan {
+  id              String   @id @default(uuid())
+  noRegistrasi    String   @unique // No. Reg Instansi
+  
+  // ✅ DATA IDENTITAS LENGKAP
+  nik             String   @unique // NIK KTP (16 digit)
+  nama            String
+  jenisKelamin    JenisKelamin
+  tempatLahir     String?
+  tanggalLahir    DateTime
+  agama           Agama    @default(ISLAM)
+  pendidikan      String?  // SD/SMP/SMA/S1/dll
+  pekerjaan       String?  // Pekerjaan sebelum dipenjara
+  alamat          String?  @db.Text
+  
+  // ✅ KONTAK DARURAT
+  noTeleponKeluarga String?
+  namaKeluarga      String? // Nama orang yang bisa dihubungi
+  
+  // ✅ DATA PERKARA & HUKUMAN
+  perkara         String   // Pasal atau kasus
+  jenisPidana     JenisPidana @default(PIDANA)
+  vonisHukuman    Int      // Dalam BULAN (contoh: 24 = 2 tahun)
+  tanggalVonis    DateTime?
+  namaPengacara   String?
+  
+  // ✅ LOGIKA MAPENALING
+  tanggalMasuk    DateTime
+  durasiMapenaling Int      @default(14) // Hari
+  jadwalSelesaiMapenaling DateTime
+  statusPenahanan StatusPenahanan @default(MAPENALING)
+  
+  // ✅ LOGIKA PEMBEBASAN
+  tanggalBebas    DateTime?// LOGIC: Tanggal Vonis + Vonis Hukuman
+  
+  // ✅ TAMBAHAN
+  fotoUrl         String?  // Upload foto
+  catatanKhusus   String?  @db.Text // Notes penting (sakit/berbahaya/dll)
+  status          StatusWBP @default(AKTIF)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([jadwalSelesaiMapenaling])
+  @@index([tanggalBebas])
+  @@index([statusPenahanan])
+  @@map("warga_binaan")
+}
+
+enum JenisPidana {
+  PIDANA        // Narapidana (sudah vonis)
+  TAHANAN       // Masih tahanan (belum vonis)
+  KURUNGAN      // Hukuman kurungan
+}
+
+enum StatusPenahanan {
+  MAPENALING    // Masa Pengenalan Lingkungan (14 hari pertama)
+  NORMAL        // Sudah selesai mapenaling
+  ISOLASI       // Diisolasi karena sakit/berbahaya
+  KARANTINA     // Karantina kesehatan
+}
+
+enum Agama {
+  ISLAM
+  KRISTEN
+  KATOLIK
+  HINDU
+  BUDDHA
+  KONGHUCU
+}
+
+enum StatusWBP {
+  AKTIF
+  BEBAS
+  DIPINDAHKAN
+  MENINGGAL
+}
+
+// --------------------------------------
+// 4. AGENDA KARUTAN (Display TV)
+// --------------------------------------
+model AgendaKarutan {
+  id          String   @id @default(uuid())
+  judul       String
+  lokasi      String?
+  waktuMulai  DateTime
+  waktuSelesai DateTime?
+  deskripsi   String?  @db.Text // Bisa panjang
+  isSelesai   Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("agenda_karutan")
+}
+
+// --------------------------------------
+// 5. HISTORY / LOG AKTIVITAS (Security)
+// --------------------------------------
+model SystemLog {
+  id          String   @id @default(uuid())
+  adminId     String
+  admin       Admin    @relation(fields: [adminId], references: [id])
+  
+  aktivitas   String   // Contoh: "Mengubah data Pegawai A"
+  tipe        LogType  // CREATE, UPDATE, DELETE, LOGIN
+  detail      String?  @db.Text // Simpan data lama/baru format JSON string jika perlu
+  
+  waktu       DateTime @default(now())
+
+  @@map("system_logs")
+}
+
+
+enum LogType {
+  LOGIN
+  LOGOUT
+  CREATE
+  UPDATE
+  DELETE
+  IMPORT
+  FORGOT_PASSWORD
+  RESET_PASSWORD 
+}
+
+model DisplaySetting {
+  id                    String   @id @default("display-config")
+  
+  // ✅ AKSES KONTROL
+  isPublic              Boolean  @default(false)
+  refreshInterval       Int      @default(30) // Detik
+  
+  // ✅ KONTEN YANG DITAMPILKAN
+  showAgenda            Boolean  @default(true)
+  showKenaikanGaji      Boolean  @default(true)
+  showKenaikanPangkat   Boolean  @default(true)
+  showPembebasan        Boolean  @default(true)
+  showMapenaling        Boolean  @default(true)
+  showPengumuman        Boolean  @default(true)
+  
+  // ✅ FILTER & LAYOUT
+  filterHariKedepan     Int      @default(30) // Tampilkan X hari ke depan
+  layoutMode            LayoutMode @default(GRID) // GRID | LIST
+  itemsPerPage          Int      @default(10)
+  
+  // ✅ CUSTOMIZATION
+  displayTitle          String   @default("RUTAN ENREKANG - SISTEM MONITORING")
+  primaryColor          String   @default("#5E2390")
+  backgroundColor       String   @default("#FFFFFF")
+  
+  updatedAt             DateTime @updatedAt
+
+  @@map("display_settings")
+}
+
+enum LayoutMode {
+  GRID
+  LIST
+  CAROUSEL
+}
+
+model Pengumuman {
+  id          String   @id @default(uuid())
+  judul       String
+  isi         String   @db.Text
+  tipe        TipePengumuman @default(INFO)
+  isPriority  Boolean  @default(false) // Tampil di atas
+  isActive    Boolean  @default(true)  // Aktif/Non-aktif
+  
+  createdBy   String?  // ID Admin yang buat
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("pengumuman")
+}
+
+enum TipePengumuman {
+  INFO      // Biru (informasi umum)
+  WARNING   // Kuning (peringatan)
+  URGENT    // Merah (mendesak)
+  SUCCESS   // Hijau (berita baik)
+}

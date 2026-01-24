@@ -1,0 +1,19 @@
+-- ✅ LANGKAH 1: TAMBAH KOLOM EMAIL DENGAN DEFAULT SEMENTARA
+ALTER TABLE "admins" ADD COLUMN "email" TEXT NOT NULL DEFAULT 'admin@rutanenrekang.com';
+
+-- ✅ LANGKAH 2: TAMBAH KOLOM KEAMANAN (NULLABLE DULU)
+ALTER TABLE "admins" ADD COLUMN "resetToken" TEXT;
+ALTER TABLE "admins" ADD COLUMN "resetTokenExpiry" TIMESTAMP(3);
+ALTER TABLE "admins" ADD COLUMN "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "admins" ADD COLUMN "lockedUntil" TIMESTAMP(3);
+ALTER TABLE "admins" ADD COLUMN "lastLoginAt" TIMESTAMP(3);
+
+-- ✅ LANGKAH 3: BUAT UNIQUE CONSTRAINT UNTUK EMAIL
+ALTER TABLE "admins" ADD CONSTRAINT "admins_email_key" UNIQUE ("email");
+
+-- ✅ LANGKAH 4: BUAT UNIQUE CONSTRAINT UNTUK resetToken (jika ada)
+CREATE UNIQUE INDEX "admins_resetToken_key" ON "admins"("resetToken");
+
+-- ✅ LANGKAH 5: HAPUS DEFAULT SETELAH DATA DIISI (OPSIONAL)
+-- Uncomment baris ini SETELAH semua admin punya email unik:
+-- ALTER TABLE "admins" ALTER COLUMN "email" DROP DEFAULT;
