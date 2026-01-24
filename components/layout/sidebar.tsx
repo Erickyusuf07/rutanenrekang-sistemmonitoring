@@ -14,7 +14,8 @@ import {
   Bell,
   FileText,
   Monitor,
-  Megaphone
+  Megaphone,
+  UserCircle
 } from "lucide-react"
 import { logoutAction } from "@/actions/auth"
 import { useEffect, useState } from "react"
@@ -130,9 +131,15 @@ export function Sidebar() {
           )
         })}
       </nav>
-
       {/* Tombol Logout */}
       <div className="border-t border-slate-100 p-4">
+      <Link
+        href="/dashboard/profile"
+        className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-[#5E2390] transition-all"
+      >
+        <UserCircle className="w-5 h-5" />
+        <span>Edit Profil</span>
+      </Link>
         <form action={logoutAction}>
           <button
             type="submit"

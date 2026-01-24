@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { LogOut } from "lucide-react"
-import { 
-  Menu, 
-  X, 
-  Home, 
-  Users, 
-  Scale, 
-  Calendar, 
-  Settings, 
+import { LogOut, UserCircle } from "lucide-react"
+import {
+  Menu,
+  X,
+  Home,
+  Users,
+  Scale,
+  Calendar,
+  Settings,
   Megaphone,
   Activity,
   FileText,
@@ -51,7 +51,7 @@ export function MobileNav() {
     }
 
     fetchNotif()
-    
+
     // Refresh setiap 30 detik
     const interval = setInterval(fetchNotif, 30000)
     return () => clearInterval(interval)
@@ -82,12 +82,11 @@ export function MobileNav() {
 
       {/* MOBILE MENU */}
       <div
-        className={`fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out md:hidden ${isOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
       >
         <div className="flex flex-col h-full">
-          
+
           {/* HEADER */}
           <div className="p-6 bg-linear-to-br from-[#5E2390] to-[#4a1c70] text-white">
             <h2 className="text-xl font-black">RUTAN ENREKANG</h2>
@@ -99,21 +98,20 @@ export function MobileNav() {
             {menuItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
-              
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className={`flex items-center gap-3 px-6 py-3.5 transition-all relative ${
-                    isActive
+                  className={`flex items-center gap-3 px-6 py-3.5 transition-all relative ${isActive
                       ? 'bg-purple-50 text-[#5E2390] font-bold border-r-4 border-[#5E2390]'
                       : 'text-slate-600 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   <Icon size={20} />
                   <span className="text-sm">{item.label}</span>
-                  
+
                   {/* ✅ BADGE NOTIFIKASI */}
                   {item.badge && notifCount > 0 && (
                     <span className="ml-auto px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full min-w-5 text-center">
@@ -127,6 +125,14 @@ export function MobileNav() {
 
           {/* LOGOUT */}
           <div className="p-4 border-t border-slate-200">
+            <Link
+              href="/dashboard/profile"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-all"
+            >
+              <UserCircle className="w-5 h-5" />
+              <span>Edit Profil</span>
+            </Link>
             <button
               onClick={onLogout}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition-all"

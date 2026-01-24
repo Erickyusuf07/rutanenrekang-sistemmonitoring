@@ -55,37 +55,37 @@ export default function DisplayContent({ initialData }: { initialData: DisplayDa
   }, [generateSlides])
 
   // ✅ REVISI 3: SMART CAROUSEL (Waktu tunggu disesuaikan dengan jumlah data yang bergulir)
-  // ✅ REVISI 3: SMART CAROUSEL (Diperbaiki untuk TypeScript & ESLint)
+  // 1. Hitung durasi dengan "Optional Chaining (?.)" agar TypeScript aman saat data.data belum siap
+  const currentSlideKey = slides[currentSlide] || '';
+  let currentDataLength = 0;
+  if (currentSlideKey === 'gaji') currentDataLength = data.data?.kenaikanGaji.length || 0;
+  if (currentSlideKey === 'pangkat') currentDataLength = data.data?.kenaikanPangkat.length || 0;
+  if (currentSlideKey === 'bebas') currentDataLength = data.data?.pembebasan.length || 0;
+  if (currentSlideKey === 'mapenaling') currentDataLength = data.data?.mapenaling.length || 0;
+  if (currentSlideKey === 'pengumuman') currentDataLength = data.data?.pengumuman.length || 0;
+
+  // Rumus: Jika data banyak > 4, tunggu sampai scroll selesai. Jika sedikit, standar 10 detik.
+  const slideDuration = currentDataLength > 4 
+    ? (currentDataLength * 3.5) * 1000 
+    : 10000;
+
+  // 2. Efek Carousel
   useEffect(() => {
-    // 1. GUARD CLAUSE: Pastikan data sukses dan data.data benar-benar ada (Solusi TS18048)
-    if (!data.success || !data.data || !data.settings) return
-    if (data.settings.layoutMode !== 'CAROUSEL' || slides.length === 0) return
-
-    // Mulai dari sini, TypeScript tahu bahwa data.data PASTI ADA.
-    const currentSlideKey = slides[currentSlide];
-    let currentDataLength = 0;
-    if (currentSlideKey === 'gaji') currentDataLength = data.data.kenaikanGaji.length;
-    if (currentSlideKey === 'pangkat') currentDataLength = data.data.kenaikanPangkat.length;
-    if (currentSlideKey === 'bebas') currentDataLength = data.data.pembebasan.length;
-    if (currentSlideKey === 'mapenaling') currentDataLength = data.data.mapenaling.length;
-
-    const slideDuration = currentDataLength > 4
-      ? (currentDataLength * 3.5) * 1000
-      : 10000;
+    if (!data.settings || data.settings.layoutMode !== 'CAROUSEL' || slides.length === 0) return;
 
     const interval = setInterval(() => {
-      setFadeIn(false)
+      setFadeIn(false);
       setTimeout(() => {
-        setCurrentSlide((prev) => (prev + 1) % slides.length)
-        setFadeIn(true)
-      }, 300)
-    }, slideDuration)
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+        setFadeIn(true);
+      }, 300);
+    }, slideDuration);
 
-    return () => clearInterval(interval)
+    return () => clearInterval(interval);
 
-    // 2. SOLUSI ESLINT: Kita bypass warning ini karena dependensi kita sudah optimal
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSlide, slides.length, data.timestamp])
+  // 👇 PERHATIKAN: Tambahkan baris komentar ini untuk mematikan peringatan ESLint (Aman untuk Vercel)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slideDuration, slides.length]);
 
   if (!data.success || !data.settings) {
     return (

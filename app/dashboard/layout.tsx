@@ -2,6 +2,7 @@
 import { Sidebar } from "@/components/layout/sidebar"
 import { MobileNav } from "@/components/layout/mobile-nav"
 import { ToastProvider } from "@/components/ui/toast-container"
+import { SessionProvider } from "next-auth/react";
 export default async function DashboardLayout({
   children,
 }: {
@@ -9,6 +10,7 @@ export default async function DashboardLayout({
 }) {
   // Double Check Security (Server Side)
   return (
+    <SessionProvider>
     <ToastProvider> 
     <div className="flex h-screen bg-slate-50 flex-col md:flex-row"> 
       <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 border-r border-slate-200 bg-white shadow-sm md:block">
@@ -25,5 +27,6 @@ export default async function DashboardLayout({
       </main>
     </div>
     </ToastProvider>
+    </SessionProvider>
   )
 }

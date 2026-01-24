@@ -20,7 +20,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isPasswordValid = await bcrypt.compare(credentials.password as string, admin.password);
         if (!isPasswordValid) return null;
 
-        return { id: admin.id, name: admin.namaLengkap, email: admin.email, role: admin.role };
+        return { id: admin.id, name: admin.namaLengkap, email: admin.email, role: admin.role, username: admin.username };
       },
     }),
   ],

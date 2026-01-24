@@ -68,7 +68,7 @@ export default function DisplaySettingsForm({ settings }: { settings: Settings }
                             name="filterHariKedepan"
                             defaultValue={settings.filterHariKedepan}
                             min="7"
-                            max="90"
+                            max="1095"
                             className="w-full px-4 py-2 border text-black border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5E2390] focus:border-transparent"
                         />
                         <p className="text-xs text-slate-500 mt-1">Tampilkan data X hari ke depan</p>
@@ -165,7 +165,7 @@ export default function DisplaySettingsForm({ settings }: { settings: Settings }
                             type="number"
                             name="itemsPerPage"
                             defaultValue={settings.itemsPerPage}
-                            min="5"
+                            min="1"
                             max="20"
                             className="w-full px-4 py-2 text-black border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5E2390] focus:border-transparent"
                         />
