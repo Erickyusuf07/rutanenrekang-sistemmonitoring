@@ -14,7 +14,7 @@ export default function FerdiPage() {
           />
         </div>
         
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Ferdi</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Ferdiansyah</h1>
         <p className="text-[#5E2390] font-medium mb-4">Mahasiswa Informatika</p>
         
         <div className="w-full border-t border-gray-100 pt-4 mt-2 text-center text-sm text-gray-500">
